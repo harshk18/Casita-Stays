@@ -1,13 +1,28 @@
 import { addDays, eachNight, toIsoDate } from '@/domain/dates';
+import { validateDateRange } from '@/domain/date-range';
+import { calculatePrice } from '@/domain/pricing';
 import { seedData, type SeedData } from '@/mocks/data';
 import {
   PAGE_SIZE,
   type Listing,
+  type Booking,
+  type BookingRequest,
   type ListingDetail,
   type ListingsQuery,
   type ListingsResponse,
   type SortValue,
 } from '@/lib/validation/schemas';
+
+export type CreateBookingResult =
+  | { ok: true; booking: Booking }
+  | { ok: false; error: 'not-found' }
+  | { ok: false; error: 'too-many-guests'; maxGuests: number }
+  | {
+      ok: false;
+      error: 'invalid-range';
+      issue: 'not-after-check-in' | 'in-the-past';
+    }
+  | { ok: false; error: 'conflict'; conflictingDates: string[] };
 
 /**
  * In-memory fake backend. State lives in process memory, so it is NOT durable
@@ -18,6 +33,8 @@ export interface MockService {
   getListing(id: string): ListingDetail | undefined;
   /** Booked nights for the month (`YYYY-MM`), or undefined for an unknown listing. */
   getBookedDates(id: string, month: string): string[] | undefined;
+  /** Validates, prices and records a booking. Check and write are one synchronous step. */
+  createBooking(request: BookingRequest): CreateBookingResult;
 }
 
 const byId = (a: ListingDetail, b: ListingDetail) => a.id.localeCompare(b.id);
@@ -58,17 +75,20 @@ export function createMockService({
   today,
 }: {
   data: SeedData;
-  today: string;
+  /** Injected clock returning `YYYY-MM-DD` (UTC). */
+  today: () => string;
 }): MockService {
   const listingsById = new Map(
     data.listings.map((listing) => [listing.id, listing]),
   );
 
   const bookedNights = new Map<string, Set<string>>();
+  const seedDay = today();
+  let bookingCount = 0;
   for (const listing of data.listings) {
     const nights = new Set<string>();
     for (const stay of data.stays[listing.id] ?? []) {
-      const checkIn = addDays(today, stay.startOffsetDays);
+      const checkIn = addDays(seedDay, stay.startOffsetDays);
       for (const night of eachNight(checkIn, addDays(checkIn, stay.nights))) {
         nights.add(night);
       }
@@ -99,6 +119,55 @@ export function createMockService({
       if (!nights) return undefined;
       return [...nights].filter((night) => night.startsWith(month)).sort();
     },
+
+    createBooking(request) {
+      const listing = listingsById.get(request.listingId);
+      const nights = bookedNights.get(request.listingId);
+      if (!listing || !nights) return { ok: false, error: 'not-found' };
+
+      if (request.guests > listing.maxGuests) {
+        return {
+          ok: false,
+          error: 'too-many-guests',
+          maxGuests: listing.maxGuests,
+        };
+      }
+
+      const validation = validateDateRange({
+        checkIn: request.checkIn,
+        checkOut: request.checkOut,
+        bookedDates: nights,
+        today: today(),
+      });
+      if (!validation.valid) {
+        return validation.issue === 'booked'
+          ? {
+              ok: false,
+              error: 'conflict',
+              conflictingDates: validation.conflictingDates,
+            }
+          : { ok: false, error: 'invalid-range', issue: validation.issue };
+      }
+
+      for (const night of eachNight(request.checkIn, request.checkOut)) {
+        nights.add(night);
+      }
+      bookingCount += 1;
+
+      return {
+        ok: true,
+        booking: {
+          id: `bkg_${String(bookingCount).padStart(4, '0')}`,
+          listingId: request.listingId,
+          checkIn: request.checkIn,
+          checkOut: request.checkOut,
+          guests: request.guests,
+          totalPrice:
+            calculatePrice(listing.pricePerNight, validation.nights)
+              .totalCents / 100,
+        },
+      };
+    },
   };
 }
 
@@ -111,7 +180,7 @@ const globalStore = globalThis as typeof globalThis & {
 export function getMockService(): MockService {
   globalStore.__casitaMockService ??= createMockService({
     data: seedData,
-    today: toIsoDate(new Date()),
+    today: () => toIsoDate(new Date()),
   });
   return globalStore.__casitaMockService;
 }
