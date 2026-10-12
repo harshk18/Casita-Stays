@@ -32,7 +32,7 @@ describe('calculatePrice', () => {
   );
 
   it('rounds each fee to whole cents, half up', () => {
-    // 10.05 * 100 is 1004.9999999999999 in floating point, and the fee is exactly 100.5 cents.
+    // 10.05 * 100 is 1005.0000000000001 in floating point, and the fee is exactly 100.5 cents.
     expect(calculatePrice(10.05, 1)).toMatchObject({
       nightlyRateCents: 1005,
       serviceFeeCents: 101,
