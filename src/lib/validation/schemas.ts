@@ -46,6 +46,20 @@ export const listingsResponseSchema = z.object({
   pageSize: z.number().int().min(1),
 });
 
+/** Query-string shape for GET /listings. Empty values must be dropped before parsing. */
+export const listingsQuerySchema = z.object({
+  city: citySchema.optional(),
+  minPrice: z.coerce.number().int().min(0).optional(),
+  maxPrice: z.coerce.number().int().min(0).optional(),
+  guests: z.coerce.number().int().min(1).optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  sort: sortSchema.default('rating-desc'),
+});
+
+export const availabilityQuerySchema = z.object({
+  month: z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM'),
+});
+
 export const availabilityResponseSchema = z.object({
   bookedDates: z.array(isoDateSchema),
 });
@@ -95,3 +109,4 @@ export type AvailabilityResponse = z.infer<typeof availabilityResponseSchema>;
 export type BookingRequest = z.infer<typeof bookingRequestSchema>;
 export type Booking = z.infer<typeof bookingSchema>;
 export type ApiError = z.infer<typeof apiErrorSchema>;
+export type ListingsQuery = z.infer<typeof listingsQuerySchema>;
