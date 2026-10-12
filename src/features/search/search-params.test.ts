@@ -11,7 +11,11 @@ describe('parseSearchParams', () => {
   });
 
   it('parses every field', () => {
-    expect(parse('city=Berlin&minPrice=50&maxPrice=120&guests=2&sort=price-asc&page=3')).toEqual({
+    expect(
+      parse(
+        'city=Berlin&minPrice=50&maxPrice=120&guests=2&sort=price-asc&page=3',
+      ),
+    ).toEqual({
       city: 'Berlin',
       minPrice: 50,
       maxPrice: 120,
@@ -45,9 +49,9 @@ describe('serializeSearchParams', () => {
   });
 
   it('uses a fixed key order', () => {
-    expect(serializeSearchParams({ page: 2, sort: 'price-asc', city: 'Berlin' })).toBe(
-      'city=Berlin&sort=price-asc&page=2',
-    );
+    expect(
+      serializeSearchParams({ page: 2, sort: 'price-asc', city: 'Berlin' }),
+    ).toBe('city=Berlin&sort=price-asc&page=2');
   });
 
   it('round-trips through parse', () => {

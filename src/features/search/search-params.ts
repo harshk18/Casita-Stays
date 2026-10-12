@@ -1,7 +1,12 @@
-import { listingsQuerySchema, type ListingsQuery } from '@/lib/validation/schemas';
+import {
+  listingsQuerySchema,
+  type ListingsQuery,
+} from '@/lib/validation/schemas';
 
 /** Accepts URLSearchParams or Next's ReadonlyURLSearchParams. Never throws. */
-export function parseSearchParams(input: Iterable<[string, string]>): ListingsQuery {
+export function parseSearchParams(
+  input: Iterable<[string, string]>,
+): ListingsQuery {
   const raw: Record<string, string> = Object.fromEntries(
     Array.from(input).filter(([, value]) => value !== ''),
   );
@@ -17,8 +22,10 @@ export function parseSearchParams(input: Iterable<[string, string]>): ListingsQu
 export function serializeSearchParams(query: ListingsQuery): string {
   const search = new URLSearchParams();
   if (query.city) search.set('city', query.city);
-  if (query.minPrice !== undefined) search.set('minPrice', String(query.minPrice));
-  if (query.maxPrice !== undefined) search.set('maxPrice', String(query.maxPrice));
+  if (query.minPrice !== undefined)
+    search.set('minPrice', String(query.minPrice));
+  if (query.maxPrice !== undefined)
+    search.set('maxPrice', String(query.maxPrice));
   if (query.guests !== undefined) search.set('guests', String(query.guests));
   if (query.sort !== 'rating-desc') search.set('sort', query.sort);
   if (query.page > 1) search.set('page', String(query.page));
