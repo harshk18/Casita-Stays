@@ -26,3 +26,12 @@ export function eachNight(checkIn: string, checkOut: string): string[] {
   }
   return nights;
 }
+
+const MS_PER_DAY = 86_400_000;
+
+/** Whole days from `from` to `to`; negative when `to` is earlier. Exact because both are UTC. */
+export function diffInDays(from: string, to: string): number {
+  return Math.round(
+    (parseIsoDate(to).getTime() - parseIsoDate(from).getTime()) / MS_PER_DAY,
+  );
+}
