@@ -27,7 +27,7 @@ const longDate = (iso: string) =>
     timeZone: 'UTC',
   });
 
-function buildMonths(today: string) {
+export function buildMonths(today: string) {
   const year = Number(today.slice(0, 4));
   const month0 = Number(today.slice(5, 7)) - 1;
   return [0, 1, 2].map((offset) => {

@@ -19,6 +19,7 @@ import {
   type DateSelection,
 } from './availability-calendar';
 import { useListing } from './use-listing';
+import { BookingPanel } from '@/features/booking/booking-panel';
 
 // Thumbnails reuse the photo URL at a smaller size to avoid downloading 1200px images.
 const thumb = (url: string) => url.replace('w=1200&h=800', 'w=240&h=160');
@@ -242,11 +243,12 @@ export function ListingDetailView({ id }: { id: string }) {
             borderRadius: 2,
           }}
         >
-          <Typography variant="h6">${pricePerNight} / night</Typography>
-          {/* Temporary: replaced by the booking panel in the next step. */}
-          <Typography>
-            {range.checkIn ?? '—'} → {range.checkOut ?? '—'}
-          </Typography>
+          <BookingPanel
+            listingId={id}
+            pricePerNight={pricePerNight}
+            maxGuests={maxGuests}
+            range={range}
+          />
         </Box>
       </Box>
     </Shell>
